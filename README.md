@@ -1,44 +1,69 @@
-# Cryptarithmetic Puzzle Solver
+# Cryptarithmetic Puzzle Solver (SEND + MORE = MONEY)
 
-An educational implementation and experiment exploring **cryptarithmetic puzzle solver**. This repository preserves the original work while adding the structure and documentation needed to understand, reproduce, and extend it.
+Three state-space search approaches (a priority-queue search labelled A*, depth-first search with backtracking, and breadth-first search) applied to the cryptarithmetic puzzle SEND + MORE = MONEY.
 
-## What this project demonstrates
+**Interactive demo:** [Run it in your browser](https://laiba-khawar-portfolio.vercel.app/work/cryptarithmetic#demo)
 
-- A practical implementation of the core technique or system
-- Reproducible source material and experiment flow
-- Clear separation between inputs, processing, and outputs
-- A foundation for further evaluation and improvement
+## Where the code is
 
-## Contents
+The repository contains a single archive, `i211697_Laibakhawar.zip`, which holds:
 
-- See the source files in this repository.
+- `i211697_Laibakhawar_N.ipynb`: the solver notebook (4 code cells).
+- `ASSIGNMENT_1_REPORT (1).pdf`: the written report.
 
-## Technology
+## How it works
 
-See the source files for implementation details
+The puzzle is written as the string `"SEND + MORE == MONEY"`. A state is a partial dictionary mapping letters to digit characters, with each digit used at most once.
 
-## Getting started
+**Cell 1: "A*" search**
+
+- Successors assign a digit to the next unassigned letter only (one letter per level).
+- `heuristic = number of letters - number of assigned letters`.
+- A successor's priority is `len(assignment) + heuristic`.
+- A state is accepted when `eval()` of the translated equation returns `True`. Python rejects integer literals with a leading zero, so assignments that start a word with 0 fail to evaluate.
+- An explored set prevents re-expanding identical assignments.
+
+**Cell 2: depth-first search**
+
+Recursive backtracking over the letters, trying digits 0 to 9 for each. The equation is only checked once all 8 letters are assigned (no partial-sum pruning). The check converts each side with `int()`, which accepts leading zeros.
+
+**Cell 3: breadth-first search**
+
+A queue of `(remaining_letters, assignment)` pairs. At each level it branches on every remaining letter and every unused digit, not just on the next letter, so the same assignment is reached through many orderings.
+
+## Results
+
+Recorded outputs in `i211697_Laibakhawar_N.ipynb`:
+
+| Method | Recorded result | Valid? |
+| --- | --- | --- |
+| "A*" (cell 1) | S=9, E=5, N=6, D=7, M=1, O=0, R=8, Y=2, i.e. 9567 + 1085 = 10652 | Yes |
+| DFS (cell 2) | S=2, E=8, N=1, D=7, M=0, O=3, R=6, Y=5, i.e. 2817 + 0368 = 03185 | No: M=0 gives MORE and MONEY a leading zero |
+| BFS (cell 3) | No recorded output | Not known |
+
+The interactive demo adds a column-wise constraint search (assigning letters column by column with carries). On SEND + MORE = MONEY it expands 1,773 nodes, compared with 2,606,501 for the plain DFS.
+
+## Running it
+
+The notebook was last run with Python 3.10 and uses only the standard library (`queue`, `collections`).
 
 ```bash
 git clone https://github.com/LaibaKhawar/Cryptarithmetic-puzzle-solver.git
 cd Cryptarithmetic-puzzle-solver
+mkdir notebook && unzip i211697_Laibakhawar.zip -d notebook
+pip install jupyter
+jupyter notebook notebook/i211697_Laibakhawar_N.ipynb
 ```
 
-Run the project:
+Cell 2 reuses the `equation` variable from cell 1, so run the cells in order.
 
-```bash
-Follow the build instructions for your compiler or runtime.
-```
+## Known limitations
 
-## Reproducibility notes
-
-Some experiments require datasets or model weights that are not committed because of size or licensing restrictions. Paths should be configured locally before execution. Randomized experiments may produce slightly different metrics across environments.
-
-## Future improvements
-
-- Add automated tests for reusable components
-- Expand evaluation with additional datasets and metrics
-- Package the core implementation behind a command-line or web interface
+- **The "A*" search is breadth-first in practice.** Its priority is `len(assignment) + (letters - len(assignment))`, which equals the number of letters (8) for every state. All states tie, the insertion counter breaks the ties, and the queue behaves first-in first-out. The heuristic gives no guidance.
+- **DFS ignores the no-leading-zero rule.** Its check uses `int()`, which accepts `0368`, so the recorded solution sets M=0 and is not a valid answer to the puzzle.
+- **BFS has no recorded result.** Branching on every remaining letter at every level makes the frontier grow very quickly, and the cell in the notebook has no output.
+- None of the methods prune partial assignments using column sums and carries, which is what makes the demo's constraint search far cheaper.
+- The puzzle string is hardcoded; there is no input interface.
 
 ## Author
 
